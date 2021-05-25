@@ -95,33 +95,34 @@ function parseTime(time, cFormat) {
 }
 
 // 输出
-const output = fs.createWriteStream((argv.output || new Date().getTime() + '.md'), {
+const output = fs.createWriteStream((argv.output || new Date().getTime() + '.yaml'), {
   encoding: 'utf-8',
   flags: 'a'
 })
 
 // 当前目录
 const dirname = path.resolve('./')
+const today = new Date()
+today.setHours(0)
+today.setMinutes(0)
+today.setSeconds(0)
+const since = parseTime(today)
+const until = parseTime(today.setDate(today.getDate() + 1))
+// console.log('range', since, until)
+
 
 function read(name) {
   return new Promise((resolve, reject) => {
-    const today = new Date()
-    today.setHours(0)
-    today.setMinutes(0)
-    today.setSeconds(0)
-    const since = parseTime(today)
-    const until = parseTime(today.setDate(today.getDate() + 1))
-    console.log('range', since, until)
     const readSteam = gitRawCommits({
       since: argv.since || since,
       until: argv.until || until,
-      author: argv.author || getAuthor()
+      author: argv.author || getAuthor(),
+      format: '- %B'
     })
     // 读一次就行，然后用来写入标题
     readSteam.once('data', chunk => {
-      console.log(`==> read ${name} has ${chunk.length}`)
       if (chunk.length > 0) {
-        output.write(`---\n\n${name}\n\n`)
+        output.write(`${name}:\n`)
       }
     })
     readSteam.pipe(output, {
